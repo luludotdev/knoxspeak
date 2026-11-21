@@ -1,0 +1,151 @@
+name: build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  knoxspeak-ts:
+    name: knoxspeak-ts
+    runs-on: windows-latest
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+    defaults:
+      run:
+        working-directory: knoxspeak-ts
+    steps:
+      - uses: actions/checkout@v7
+      - name: Short hash
+        shell: bash
+        run: echo "SHORT_SHA=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+      - name: MSVC developer environment
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * `
+            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw "No Visual Studio with MSVC x64 tools found" }
+          cmd /c "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && set" | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') { "$($Matches[1])=$($Matches[2])" | Out-File $env:GITHUB_ENV -Append -Encoding utf8 }
+          }
+      - uses: mozilla-actions/sccache-action@v0.0.11
+      - name: Configure
+        run: cmake --preset msvc -DKNOXSPEAK_GIT_HASH=${{ github.sha }} -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+      - name: Build
+        run: |
+          cmake --build --preset msvc-release
+          sccache --show-stats
+      - name: Test
+        run: ctest --preset msvc-release
+      - name: Package
+        run: cmake --build --preset msvc-release --target package_ts3
+      - uses: actions/upload-artifact@v7
+        with:
+          name: knoxspeak-ts-${{ env.SHORT_SHA }}
+          path: |
+            knoxspeak-ts/build/msvc/knoxspeak.ts3_plugin
+            knoxspeak-ts/build/msvc/Release/knoxspeak_ts_win64.dll
+            knoxspeak-ts/build/msvc/Release/knoxspeak_ts_win64.pdb
+          if-no-files-found: error
+
+  knoxspeak-java:
+    name: knoxspeak-java
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: knoxspeak-java
+    steps:
+      - uses: actions/checkout@v7
+      - name: Short hash
+        run: echo "SHORT_SHA=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Build, test, stage mod
+        run: chmod +x ./gradlew && ./gradlew build --no-daemon
+      - uses: actions/upload-artifact@v7
+        with:
+          name: knoxspeak-java-${{ env.SHORT_SHA }}
+          path: knoxspeak-java/build/mod/
+          if-no-files-found: error
+
+  package:
+    name: package
+    needs: [knoxspeak-ts, knoxspeak-java]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      IS_TAG: ${{ startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - name: Short hash
+        run: echo "SHORT_SHA=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@v8
+        with:
+          name: knoxspeak-java-${{ env.SHORT_SHA }}
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: knoxspeak-ts-${{ env.SHORT_SHA }}
+          path: ts
+      - name: Check mod
+        run: |
+          test -f dist/knoxspeak/42/mod.info
+          test -f dist/knoxspeak/42/media/java/client/knoxspeak-java.jar
+          find dist -type f | sort
+      - name: Check tag matches mod version
+        if: env.IS_TAG == 'true'
+        run: |
+          modversion=$(sed -n 's/^modversion=//p' dist/knoxspeak/42/mod.info | tr -d '\r')
+          expected="${GITHUB_REF_NAME#v}"
+          if [ "${modversion%%+*}" != "$expected" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match mod version $modversion (bump baseVersion in gradle.properties)"
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v7
+        if: env.IS_TAG != 'true'
+        with:
+          name: knoxspeak-${{ env.SHORT_SHA }}
+          path: dist/
+          if-no-files-found: error
+      - name: Prepare release assets
+        if: env.IS_TAG == 'true'
+        run: |
+          mkdir release
+          (cd dist && zip -r "../release/knoxspeak-${GITHUB_REF_NAME}.zip" knoxspeak)
+          cp ts/knoxspeak.ts3_plugin ts/Release/knoxspeak_ts_win64.pdb release/
+
+          # SHA-256 of every asset, in the log and the run summary, to compare with the release page.
+          (cd release && sha256sum *)
+          {
+            echo "### knoxspeak $GITHUB_REF_NAME release assets"
+            echo
+            echo "| Asset | SHA-256 |"
+            echo "| --- | --- |"
+            for f in release/*; do
+              echo "| \`$(basename "$f")\` | \`$(sha256sum "$f" | cut -d' ' -f1)\` |"
+            done
+            echo
+            echo "Verify a download with \`gh attestation verify <file> --repo $GITHUB_REPOSITORY\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/attest@v4
+        if: env.IS_TAG == 'true'
+        with:
+          subject-path: release/*
+      - name: Create release
+        if: env.IS_TAG == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=()
+          case "$GITHUB_REF_NAME" in *-*) prerelease=(--prerelease) ;; esac
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
+            --title "knoxspeak $GITHUB_REF_NAME" "${prerelease[@]}" release/*

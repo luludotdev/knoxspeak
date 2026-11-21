@@ -1,0 +1,6 @@
+Name = knoxspeak
+Type = Plugin
+Author = @KNOXSPEAK_AUTHOR@
+Version = @KNOXSPEAK_VERSION_FULL@
+Platforms = win64
+Description = "@PROJECT_DESCRIPTION@"

@@ -1,0 +1,104 @@
+plugins {
+    id 'java'
+}
+
+tasks.named('wrapper') {
+    gradleVersion = '9.3.1'
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+def gameDir = file(providers.gradleProperty('pzGameDir').get())
+def gameJar = new File(gameDir, 'projectzomboid.jar')
+def zbJar = new File(gameDir, 'ZombieBuddy.jar')
+def modSrcDir = layout.projectDirectory.dir('../knoxspeak')
+def stagedModDir = layout.buildDirectory.dir('mod/knoxspeak')
+
+def gitHash = providers.environmentVariable('GITHUB_SHA').orElse(
+    providers.exec {
+        commandLine 'git', 'rev-parse', 'HEAD'
+        ignoreExitValue = true
+    }.standardOutput.asText.map { it.trim() })
+def rawHash = gitHash.getOrElse('')
+def hash = (rawHash ==~ /[0-9a-fA-F]{7,40}/) ? rawHash.take(12) : ''
+version = providers.gradleProperty('baseVersion').get() + (hash ? "+g${hash}" : '+unknown')
+def useStubs = providers.gradleProperty('useStubs').map { it.toBoolean() }.getOrElse(!gameJar.exists())
+
+sourceSets {
+    stubs
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    if (useStubs) {
+        compileOnly sourceSets.stubs.output
+    } else {
+        compileOnly files(gameJar)
+    }
+    if (zbJar.exists()) {
+        compileOnly files(zbJar)
+    }
+
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xlint:all', '-Xlint:-processing']
+}
+
+def buildBanner = "knoxspeak-java ${version} (game classes: ${useStubs ? 'stubs' : gameJar})".toString()
+tasks.named('compileJava') {
+    doFirst {
+        logger.lifecycle(buildBanner)
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.named('jar') {
+    archiveFileName = 'knoxspeak-java.jar'
+    manifest {
+        attributes(
+            'Implementation-Title': 'knoxspeak-java',
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': 'lulu.dev'
+        )
+    }
+}
+
+def modVersion = project.version.toString()
+def stageMod = tasks.register('stageMod', Sync) {
+    into stagedModDir
+    from(modSrcDir) {
+        exclude '**/.gitkeep'
+        filesMatching('**/mod.info') {
+            filter { String line -> line.replace('@VERSION@', modVersion) }
+        }
+    }
+    from(tasks.named('jar')) {
+        into '42/media/java/client'
+    }
+    inputs.property('modVersion', modVersion)
+}
+
+tasks.named('assemble') {
+    dependsOn stageMod
+}
+
+tasks.register('deployMod', Sync) {
+    from stageMod
+    into "${System.getProperty('user.home')}/Zomboid/mods/knoxspeak"
+}

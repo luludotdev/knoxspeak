@@ -1,0 +1,11 @@
+name=knoxspeak
+id=knoxspeak
+author=lulu.dev
+description=make the zomboid voip not suck with the power of TeamSpeak. Requires ZombieBuddy and the companion TeamSpeak 3 plugin.
+modversion=@VERSION@
+
+require=\ZombieBuddy
+
+javaJarFile=media/java/client/knoxspeak-java.jar
+javaPkgName=dev.lulu.knoxspeak
+ZBVersionMin=2.3.0
