@@ -10,6 +10,7 @@
 - [TeamSpeak 3 Server](https://www.teamspeak.com/en/downloads?product=server) **(Not TeamSpeak 6)**
 - [TeamSpeak 3 Client](https://www.teamspeak.com/en/downloads?product=ts3) **(required by all clients)**
   - The knoxspeak TS3 plugin must be installed and enabled
+- Subscribed to [knoxspeak](https://steamcommunity.com/sharedfiles/filedetails/?id=3843936061) on the Workshop
 
 ## Server Setup
 
@@ -39,8 +40,8 @@ This applies to every client. Everyone who wants to use knoxspeak must have done
 
 ### Zomboid
 
-Ensure ZombieBuddy is active and you are subscribed to knoxspeak on the workshop. If the server has the mods enabled then Zomboid should load it on the client too,
-but if you want to be safe you can enable it in the mods menu too.
+Ensure ZombieBuddy is active and you are subscribed to [knoxspeak](https://steamcommunity.com/sharedfiles/filedetails/?id=3843936061) on the workshop.
+If the server has the mods enabled then Zomboid should load it on the client too, but if you want to be safe you can enable it in the mods menu too.
 
 When enabled, knoxspeak will disable VOIP on your client. You can also manually turn it off in the settings to be safe.
 

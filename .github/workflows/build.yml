@@ -122,6 +122,7 @@ jobs:
           mkdir release
           (cd dist && zip -r "../release/knoxspeak-${GITHUB_REF_NAME}.zip" knoxspeak)
           cp ts/knoxspeak.ts3_plugin ts/Release/knoxspeak_ts_win64.pdb release/
+          cp dist/knoxspeak/42/media/java/client/knoxspeak-java.jar release/
 
           # SHA-256 of every asset, in the log and the run summary, to compare with the release page.
           (cd release && sha256sum *)

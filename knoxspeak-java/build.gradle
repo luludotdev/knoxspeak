@@ -102,3 +102,28 @@ tasks.register('deployMod', Sync) {
     from stageMod
     into "${System.getProperty('user.home')}/Zomboid/mods/knoxspeak"
 }
+
+def workshopSrcDir = layout.projectDirectory.dir('../workshop')
+def workshopDir = new File(System.getProperty('user.home'), 'Zomboid/Workshop/knoxspeak')
+tasks.register('deployWorkshop', Sync) {
+    into workshopDir
+    from(workshopSrcDir) {
+        include 'workshop.txt', 'preview.png'
+    }
+    from(stageMod) {
+        into 'Contents/mods/knoxspeak'
+    }
+    doFirst {
+        def idOf = { File f ->
+            f.exists() ? (f.readLines().find { it.startsWith('id=') } ?: 'id=').substring(3).trim() : ''
+        }
+        def repoId = idOf(workshopSrcDir.file('workshop.txt').asFile)
+        def deployedId = idOf(new File(workshopDir, 'workshop.txt'))
+        if (deployedId && deployedId != repoId) {
+            throw new GradleException("${workshopDir}/workshop.txt has id=${deployedId} but workshop/workshop.txt has id=${repoId ?: '(empty)'}")
+        }
+        if (!workshopSrcDir.file('preview.png').asFile.exists()) {
+            logger.warn('workshop/preview.png is missing: the game will not upload without it')
+        }
+    }
+}

@@ -1,0 +1,8 @@
+version=1
+id=3843936061
+title=knoxspeak
+description=make the zomboid voip not suck with the power of TeamSpeak.
+description=
+description=Requires ZombieBuddy and the companion TeamSpeak 3 plugin. The server must set VoiceEnable=false.
+tags=Build 42;Audio;Multiplayer
+visibility=unlisted
