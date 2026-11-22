@@ -157,7 +157,7 @@ class RadioProcessor {
         const float lpA = onePoleAlpha(logLerp(kLowPassNearHz, kLowPassEdgeHz, weak));
         const float noiseHpA = onePoleAlpha(kNoiseHighPassHz);
         const float noiseLpA = onePoleAlpha(kNoiseLowPassHz);
-        const float voiceLevel = 1.0f - (1.0f - kVoiceAtEdge) * weak;
+        const float voiceLevel = 1.0f - (1.0f - kVoiceAtEdge) * weak * weak;
         // weak = fraction of the range covered (the game's quality is linear in distance).
         const float noiseAmp = kNoiseEdge * std::clamp((weak - kStaticStart) / (1.0f - kStaticStart), 0.0f, 1.0f);
         const float driveNorm = 1.0f / std::tanh(kDrive);
@@ -204,7 +204,7 @@ class RadioProcessor {
     static constexpr float kLowPassEdgeHz = 1600.0f;
     static constexpr float kDrive = 2.0f;
     static constexpr float kMakeup = 0.6f; // tanh(2x)/tanh(2) ~2x speech level (band pass helps return dampen)
-    static constexpr float kVoiceAtEdge = 0.3f; // voice level at edge of range (relative to clear signal)
+    static constexpr float kVoiceAtEdge = 0.6f; // voice level at edge of range (relative to clear signal)
 
     // band-limited static noise
     static constexpr float kStaticStart = 0.3f; // range % static starts at
