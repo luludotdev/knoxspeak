@@ -50,9 +50,9 @@ When enabled, knoxspeak will disable VOIP on your client. You can also manually 
 
 ### TeamSpeak
 
-Install the knoxspeak TeamSpeak plugin (shipped with the mod on the workshop, or available for download here on GitHub). Double click the `knoxspeak.ts3_plugin`
-**while TeamSpeak is closed**, this will install and activate the plugin. Open TeamSpeak and click on `Self -> Sound Pack -> Sounds deactivated`. This will disable
-join / leave sounds etc.
+Install the knoxspeak TeamSpeak plugin (check the releases here on GitHub). Ensure the TS plugin and mod versions match exactly.
+Double click the `knoxspeak.ts3_plugin` **while TeamSpeak is closed**, this will install and activate the plugin. Open TeamSpeak and click on
+`Self -> Sound Pack -> Sounds deactivated`. This will disable join / leave sounds etc.
 
 When connected to the server, clicking on your own name should have a line in the right side panel that reads `knoxspeak status:`. If this is missing then the
 plugin didnt install correctly, or is disabled. When loading the game the status indicator should turn orange once the Java mod loads and connects to TeamSpeak.
