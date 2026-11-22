@@ -9,8 +9,11 @@
 - [ZombieBuddy](https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853)
 - [TeamSpeak 3 Server](https://www.teamspeak.com/en/downloads?product=server) **(Not TeamSpeak 6)**
 - [TeamSpeak 3 Client](https://www.teamspeak.com/en/downloads?product=ts3) **(required by all clients)**
-  - The knoxspeak TS3 plugin must be installed and enabled
-- Subscribed to [knoxspeak](https://steamcommunity.com/sharedfiles/filedetails/?id=3843936061) on the Workshop
+
+## Quick Links
+
+- [Workshop page](https://steamcommunity.com/sharedfiles/filedetails/?id=3843936061)
+- [Latest release](https://github.com/luludotdev/knoxspeak/releases/latest) (contains the TeamSpeak 3 plugin)
 
 ## Server Setup
 
