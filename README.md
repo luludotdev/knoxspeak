@@ -57,8 +57,7 @@ When enabled, knoxspeak will disable VOIP on your client. You can also manually 
 
 Install the knoxspeak TeamSpeak plugin (check the releases here on GitHub). Ensure the TS plugin and mod versions match
 exactly. Double click the `knoxspeak.ts3_plugin` **while TeamSpeak is closed**, this will install and activate the
-plugin. Open TeamSpeak and click on `Self -> Sound Pack -> Sounds deactivated`. This will disable join / leave sounds
-etc.
+plugin. Check the Recommended Settings section below once everything is set up.
 
 When connected to the server, clicking on your own name should have a line in the right side panel that reads
 `knoxspeak status:`. If this is missing then the plugin didnt install correctly, or is disabled. When loading the game
@@ -66,3 +65,11 @@ the status indicator should turn orange once the Java mod loads and connects to 
 server if all is correct then the status indicator will turn green and knoxspeak will be active.
 
 **When you close Zomboid you will hear everyone normally.** Deafen or move channels to prevent this.
+
+#### Recommended Settings
+
+- `Self -> Sound Pack -> Sounds deactivated`, this will disable join / leave sounds etc.
+- `Tools -> Options -> Chat`, disable `Indicate Incoming Chat` for everything
+- `Tools -> Options -> Playback`, ensure `Automatic voice volume levelling` is disabled
+- `Tools -> Options -> Capture`, disable all DSP effects and set an appropriate voice gate; **you may want to tune these
+  to make sure you sound OK to others**
