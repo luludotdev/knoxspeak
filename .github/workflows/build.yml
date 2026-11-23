@@ -67,8 +67,23 @@ jobs:
           distribution: temurin
           java-version: "25"
       - uses: gradle/actions/setup-gradle@v6
+      - name: Setup signing key
+        env:
+          ZBS_PRIVATE_KEY: ${{ secrets.ZBS_PRIVATE_KEY }}
+          ZBS_STEAM_ID64: ${{ secrets.ZBS_STEAM_ID64 }}
+        run: |
+          if [ -z "$ZBS_PRIVATE_KEY" ]; then
+            echo "::warning::ZBS_PRIVATE_KEY secret not set"
+            exit 0
+          fi
+          key="$RUNNER_TEMP/zbs-private.der"
+          (umask 077 && printf '%s' "$ZBS_PRIVATE_KEY" | base64 -d > "$key")
+          {
+            echo "ORG_GRADLE_PROJECT_zbsPrivateKeyFile=$key"
+            echo "ORG_GRADLE_PROJECT_zbsSteamID64=$ZBS_STEAM_ID64"
+          } >> "$GITHUB_ENV"
       - name: Build, test, stage mod
-        run: chmod +x ./gradlew && ./gradlew build --no-daemon
+        run: chmod +x ./gradlew && ./gradlew build --no-daemon --no-configuration-cache
       - uses: actions/upload-artifact@v7
         with:
           name: knoxspeak-java-${{ env.SHORT_SHA }}
@@ -101,9 +116,13 @@ jobs:
           test -f dist/knoxspeak/42/mod.info
           test -f dist/knoxspeak/42/media/java/client/knoxspeak-java.jar
           find dist -type f | sort
-      - name: Check tag matches mod version
+      - name: Check tag and signing key
         if: env.IS_TAG == 'true'
         run: |
+          if [ ! -f dist/knoxspeak/42/media/java/client/knoxspeak-java.jar.zbs ]; then
+            echo "::error::release jar is unsigned"
+            exit 1
+          fi
           modversion=$(sed -n 's/^modversion=//p' dist/knoxspeak/42/mod.info | tr -d '\r')
           expected="${GITHUB_REF_NAME#v}"
           if [ "${modversion%%+*}" != "$expected" ]; then
@@ -122,7 +141,7 @@ jobs:
           mkdir release
           (cd dist && zip -r "../release/knoxspeak-${GITHUB_REF_NAME}.zip" knoxspeak)
           cp ts/knoxspeak.ts3_plugin ts/Release/knoxspeak_ts_win64.pdb release/
-          cp dist/knoxspeak/42/media/java/client/knoxspeak-java.jar release/
+          cp dist/knoxspeak/42/media/java/client/knoxspeak-java.jar dist/knoxspeak/42/media/java/client/knoxspeak-java.jar.zbs release/
 
           # SHA-256 of every asset, in the log and the run summary, to compare with the release page.
           (cd release && sha256sum *)

@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'io.github.zed-0xff.zb-gradle-plugin' version '1.0.3'
 }
 
 tasks.named('wrapper') {
@@ -27,6 +28,11 @@ sourceSets {
     stubs
 }
 
+configurations {
+    zombieBuddy
+    compileOnly.extendsFrom zombieBuddy
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
@@ -44,7 +50,7 @@ dependencies {
         compileOnly files(gameJar)
     }
     if (zbJar.exists()) {
-        compileOnly files(zbJar)
+        zombieBuddy files(zbJar)
     }
 
     testImplementation platform('org.junit:junit-bom:5.11.4')
@@ -66,6 +72,14 @@ tasks.named('compileJava') {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+zbSigning {
+    jarTask = 'jar'
+}
+def signingConfigured = ['zbsSteamID64', 'zbsPrivateKeyFile'].any { providers.gradleProperty(it).isPresent() }
+tasks.matching { it.name == 'signJarZBS' }.configureEach {
+    notCompatibleWithConfigurationCache('zb-gradle-plugin signJarZBS references the Jar task at execution time')
 }
 
 tasks.named('jar') {
@@ -91,6 +105,11 @@ def stageMod = tasks.register('stageMod', Sync) {
     from(tasks.named('jar')) {
         into '42/media/java/client'
     }
+    if (signingConfigured) {
+        from(files(tasks.named('jar').flatMap { it.archiveFile }.map { "${it.asFile}.zbs" })
+            .builtBy(tasks.matching { it.name == 'signJarZBS' })) { into '42/media/java/client' }
+    }
+    inputs.property('signed', signingConfigured)
     inputs.property('modVersion', modVersion)
 }
 
