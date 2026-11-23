@@ -4,6 +4,7 @@ package zombie.characters;
 
 public class IsoPlayer {
     public boolean isSpeek;
+    public boolean isVoiceMute;
     public zombie.iso.IsoGridSquare getCurrentSquare() { throw new UnsupportedOperationException("stub"); }
     public final int getIndex() { throw new UnsupportedOperationException("stub"); }
     public static zombie.characters.IsoPlayer getInstance() { throw new UnsupportedOperationException("stub"); }

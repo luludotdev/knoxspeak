@@ -193,6 +193,7 @@ public final class VoiceTick {
         IsoPlayer me = IsoPlayer.getInstance();
         boolean haveMe = me != null && me.getUsername() != null;
         if (haveMe) {
+            me.isVoiceMute = micMuted && bridge.isConnected();
             bridge.setUsername(me.getUsername());
             inSession = true;
         }
