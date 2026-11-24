@@ -24,28 +24,52 @@ end
 
 KnoxSpeakStatus = ISPanel:derive("KnoxSpeakStatus")
 
-local WIDTH = 900
 local TOP = 40
 
 function KnoxSpeakStatus:new()
-  local o = ISPanel.new(self, (getCore():getScreenWidth() - WIDTH) / 2, TOP, WIDTH, 60)
+  local o = ISPanel.new(self, 0, TOP, 1, 1)
   o.background = false
   o.border = false
+  o.line = nil
   o:instantiate()
   o.javaObject:setConsumeMouseEvents(false)
   o:setAlwaysOnTop(true)
+  o:setVisible(false)
   return o
+end
+
+function KnoxSpeakStatus:refresh()
+  local line = statusLine()
+  self.line = line
+  if not line then
+    if self:isVisible() then self:setVisible(false) end
+    return
+  end
+  local w = getTextManager():MeasureStringX(UIFont.Small, line.text) + 1
+  local h = getTextManager():getFontHeight(UIFont.Small) + 1
+  self:setWidth(w)
+  self:setHeight(h)
+  self:setX((getCore():getScreenWidth() - w) / 2)
+  if not self:isVisible() then self:setVisible(true) end
 end
 
 function KnoxSpeakStatus:prerender() end
 
 function KnoxSpeakStatus:render()
-  local line = statusLine()
+  local line = self.line
   if not line then return end
-  local x = (self.width - getTextManager():MeasureStringX(UIFont.Small, line.text)) / 2
-  self:drawText(line.text, x + 1, 1, 0, 0, 0, 0.8, UIFont.Small)
-  self:drawText(line.text, x, 0, line.color.r, line.color.g, line.color.b, 1, UIFont.Small)
+  self:drawText(line.text, 1, 1, 0, 0, 0, 0.8, UIFont.Small)
+  self:drawText(line.text, 0, 0, line.color.r, line.color.g, line.color.b, 1, UIFont.Small)
 end
+
+-- stop eating mouse inputs on the status ui
+function KnoxSpeakStatus:onRightMouseDown() return false end
+
+function KnoxSpeakStatus:onRightMouseUp() return false end
+
+function KnoxSpeakStatus:onMouseDown() return false end
+
+function KnoxSpeakStatus:onMouseUp() return false end
 
 local panel = nil
 
@@ -55,11 +79,9 @@ local function onGameStart()
   panel:addToUIManager()
 end
 
-local function onResolutionChange(_, _, newW, _)
-  if panel then
-    panel:setX((newW - WIDTH) / 2)
-  end
+local function onTick()
+  if panel then panel:refresh() end
 end
 
 Events.OnGameStart.Add(onGameStart)
-Events.OnResolutionChange.Add(onResolutionChange)
+Events.OnTick.Add(onTick)
