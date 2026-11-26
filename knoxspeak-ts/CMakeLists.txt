@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 
 project(knoxspeak-ts
-    VERSION 0.1.1
+    VERSION 0.1.2
     DESCRIPTION "make the zomboid voip not suck with the power of TeamSpeak"
     LANGUAGES CXX)
 
