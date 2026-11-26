@@ -1,5 +1,7 @@
 package dev.lulu.knoxspeak;
 
+import se.krka.kahlua.vm.KahluaTable;
+import zombie.Lua.LuaManager;
 import zombie.characters.IsoPlayer;
 import zombie.iso.IsoGridSquare;
 import zombie.network.GameClient;
@@ -59,6 +61,20 @@ public final class VoiceTick {
 
     static boolean silenced(IsoPlayer p) {
         return p.isDead() || p.isInvisible();
+    }
+
+    private static boolean luaGlobalTrue(String name) {
+        KahluaTable env = LuaManager.env;
+        return env != null && Boolean.TRUE.equals(env.rawget(name));
+    }
+
+    static boolean selfSilenced(IsoPlayer me) {
+        if (me.isDead()) return true;
+        if (!me.isInvisible()) return false;
+
+        // set by MinidoracatSafeSpawn (workshop id: 3653490664)
+        // prevents self mute during spawn protection invisiblity
+        return !(luaGlobalTrue("spawnProtectActive") && !luaGlobalTrue("adminGhostToggle"));
     }
 
     //region user options
@@ -157,7 +173,7 @@ public final class VoiceTick {
         String key = NameKeys.of(username);
         IsoPlayer me = IsoPlayer.getInstance();
         if (me != null && key.equals(NameKeys.of(me.getUsername()))) {
-            me.isSpeek = talking && !silenced(me);
+            me.isSpeek = talking && !selfSilenced(me);
             return;
         }
 
@@ -234,7 +250,7 @@ public final class VoiceTick {
 
         sendIfChanged("radiofilter", Protocol.config("radiofilter", radioFilter));
         sendIfChanged("radiostatic", Protocol.config("radiostatic", radioStatic));
-        sendIfChanged("silence", Protocol.silence(me != null && silenced(me)));
+        sendIfChanged("silence", Protocol.silence(me != null && selfSilenced(me)));
         // report our walkie to everyone so they can hear it
         Listener l = listener;
         sendIfChanged("carry", Protocol.carry(radios.refreshReceivers(l.self(), l.onlineId(), (x, y, z, sq, key, s) -> fromSource(l, x, y, z, sq, key, s, now, false))));
